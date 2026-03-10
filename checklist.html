@@ -1,0 +1,514 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Check-List de Veículos</title>
+  
+  <link rel="manifest" href="manifest.json">
+  <meta name="theme-color" content="#ffffff">
+  
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
+  
+  <style>
+    /* Estilos Globais e Fundo */
+    body { 
+      background-color: #f0f2f5; 
+      padding-bottom: 90px; 
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    }
+    
+    /* App Bar Superior */
+    .app-header {
+      background-color: #ffffff;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.08);
+      position: sticky;
+      top: 0;
+      z-index: 1000;
+      padding: 15px 20px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-bottom: 20px;
+    }
+    .app-header img { max-height: 40px; margin-right: 15px; }
+    .app-header h5 { margin: 0; font-weight: 700; color: #0d6efd; letter-spacing: -0.5px; }
+
+    /* Inputs e Cards de Formulário */
+    .app-card {
+      background: #ffffff;
+      border-radius: 16px;
+      padding: 20px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+      margin-bottom: 20px;
+      border: none;
+    }
+    .form-control, .form-select {
+      border-radius: 12px;
+      padding: 12px 15px;
+      border: 1px solid #dee2e6;
+      background-color: #fafafa;
+    }
+    .form-control:focus, .form-select:focus {
+      background-color: #ffffff;
+      box-shadow: 0 0 0 0.25rem rgba(13, 110, 253, 0.15);
+    }
+    .form-label { font-weight: 600; color: #495057; font-size: 0.9rem; margin-bottom: 6px; }
+
+    /* Estilo dos Itens de Inspeção */
+    .item-inspecao { 
+      background: #ffffff; 
+      border-radius: 16px; 
+      padding: 18px; 
+      margin-bottom: 15px; 
+      box-shadow: 0 2px 8px rgba(0,0,0,0.04); 
+      border: 1px solid #f4f4f4;
+    }
+    .foto-input { display: none; margin-top: 12px; }
+    .obs-input { margin-top: 12px; font-size: 14px; }
+    
+    /* Bottom Bar Fixa para o Botão Principal */
+    .bottom-bar {
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      background: #ffffff;
+      padding: 15px 20px;
+      box-shadow: 0 -4px 15px rgba(0,0,0,0.05);
+      z-index: 1000;
+      display: flex;
+      justify-content: center;
+    }
+    .btn-revisar { width: 100%; max-width: 500px; border-radius: 12px; padding: 14px; font-size: 1.1rem; }
+
+    /* Modal Estilizado */
+    .modal-content { border-radius: 20px; border: none; }
+    .modal-header { border-radius: 20px 20px 0 0; }
+    .resumo-revisao p { margin-bottom: 8px; font-size: 0.95rem; }
+
+    /* Ajustes de Impressão */
+    @media print {
+      body { background-color: white !important; padding: 0; }
+      .app-header, .bottom-bar, #checklistForm, .modal { display: none !important; }
+      #areaImpressao { display: block !important; }
+      .d-print-none { display: none !important; }
+    }
+  </style>
+</head>
+<body>
+
+<header class="app-header d-print-none" id="headerForm">
+  <img src="logo.png" alt="Logo" onerror="this.style.display='none'">
+  <h5>CHECK-LIST VEÍCULOS</h5>
+</header>
+
+<div class="container" id="conteudo-pdf" style="max-width: 600px;">
+  
+  <form id="checklistForm">
+    <div class="app-card">
+      <h6 class="mb-3 text-primary fw-bold"><i class="bi bi-info-circle me-2"></i>Dados Gerais</h6>
+      
+      <div class="mb-3">
+        <label class="form-label text-muted">Data e Horário</label>
+        <input type="text" id="dataHora" class="form-control text-muted" readonly style="background-color: #e9ecef;">
+      </div>
+
+      <div class="mb-3">
+        <label class="form-label">Motorista</label>
+        <select id="motorista" class="form-select" required><option value="">Carregando...</option></select>
+      </div>
+
+      <div class="mb-3">
+        <label class="form-label">Modelo do Veículo</label>
+        <select id="veiculo" class="form-select" onchange="preencherPlaca()" required><option value="">Carregando...</option></select>
+      </div>
+
+      <div class="row">
+        <div class="col-6 mb-3">
+          <label class="form-label">Placa</label>
+          <input type="text" id="placa" class="form-control" placeholder="Automático" required>
+        </div>
+        <div class="col-6 mb-3">
+          <label class="form-label">Data da Rev.</label>
+          <input type="date" id="dataRevisao" class="form-control" required>
+        </div>
+      </div>
+
+      <div class="mb-2">
+        <label class="form-label">Kilometragem Atual</label>
+        <div class="input-group">
+          <span class="input-group-text bg-white border-end-0"><i class="bi bi-speedometer2 text-muted"></i></span>
+          <input type="number" id="km" class="form-control border-start-0 ps-0" placeholder="Ex: 15000" required>
+        </div>
+      </div>
+    </div>
+
+    <h6 class="mt-4 mb-3 ps-2 text-secondary fw-bold text-uppercase" style="font-size: 0.85rem;"><i class="bi bi-card-checklist me-2"></i>Itens Inspecionados</h6>
+    
+    <div id="listaItens">
+      <div class="text-center p-4">
+        <div class="spinner-border text-primary" role="status"></div>
+        <p class="text-muted mt-2">Carregando itens...</p>
+      </div>
+    </div>
+
+    <div class="bottom-bar d-print-none" id="areaBotoesPrincipal">
+      <button type="button" class="btn btn-warning btn-revisar fw-bold text-dark shadow-sm" onclick="abrirRevisao()">
+        <i class="bi bi-check2-all me-2"></i>Revisar e Enviar
+      </button>
+    </div>
+  </form>
+
+  <div id="areaImpressao" style="display: none;"></div>
+</div>
+
+<div class="modal fade" id="modalRevisao" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable">
+    <div class="modal-content">
+      <div class="modal-header bg-warning text-dark border-0">
+        <h5 class="modal-title fw-bold"><i class="bi bi-search me-2"></i>Revisar Informações</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body resumo-revisao bg-light" id="conteudoRevisao">
+      </div>
+      <div class="modal-footer border-0 bg-white">
+        <button type="button" class="btn btn-light border" data-bs-dismiss="modal">Voltar</button>
+        <button type="button" class="btn btn-success fw-bold px-4" onclick="confirmarEnvio()" id="btnConfirmar">
+          <i class="bi bi-cloud-arrow-up me-2"></i>Confirmar
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+
+<script>
+  const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbz9x_swESJO1GvXhXFJSUqBXl0lTQbua_r1ODTK3gLnXGQyTdjemk6zIr48YLVQhkQE/exec';
+
+  let dadosFormularioAtual = {}; 
+  let modalRevisao; 
+  let mapaVeiculoPlaca = {}; 
+
+  document.addEventListener("DOMContentLoaded", function() {
+    document.getElementById('dataHora').value = new Date().toLocaleString('pt-BR');
+    modalRevisao = new bootstrap.Modal(document.getElementById('modalRevisao'));
+    carregarDadosBase();
+  });
+
+  function carregarDadosBase() {
+    fetch(APPS_SCRIPT_URL)
+      .then(response => response.json())
+      .then(dados => popularFormulario(dados))
+      .catch(erro => {
+        document.getElementById('listaItens').innerHTML = "<p class='text-danger text-center p-3'>Erro ao carregar dados da planilha.</p>";
+        console.error(erro);
+      });
+  }
+
+  function popularFormulario(dados) {
+    const preencherSelect = (id, array) => {
+      const select = document.getElementById(id);
+      select.innerHTML = '<option value="">Selecione...</option>';
+      array.forEach(item => {
+        select.innerHTML += `<option value="${item}">${item}</option>`;
+      });
+    };
+
+    preencherSelect('motorista', dados.motoristas);
+    preencherSelect('veiculo', dados.veiculos);
+    
+    dados.veiculos.forEach((veiculo, index) => {
+      if (veiculo && dados.placas[index]) {
+        mapaVeiculoPlaca[veiculo] = dados.placas[index];
+      }
+    });
+
+    const listaItens = document.getElementById('listaItens');
+    listaItens.innerHTML = '';
+    dados.itens.forEach((item, index) => {
+      listaItens.innerHTML += `
+        <div class="item-inspecao" id="item_${index}">
+          <p class="fw-bold mb-3 text-dark" style="font-size: 1.05rem;">
+            ${item}
+          </p>
+          
+          <div class="d-flex gap-2 mb-1">
+            <input type="radio" class="btn-check" name="status_${index}" id="btn-c-${index}" value="Conforme" onchange="toggleFoto(${index}, false)" autocomplete="off">
+            <label class="btn btn-outline-success fw-bold flex-fill rounded-pill py-2" for="btn-c-${index}"><i class="bi bi-check-circle me-1"></i> C</label>
+
+            <input type="radio" class="btn-check" name="status_${index}" id="btn-n-${index}" value="Não Conforme" onchange="toggleFoto(${index}, true)" autocomplete="off">
+            <label class="btn btn-outline-danger fw-bold flex-fill rounded-pill py-2" for="btn-n-${index}"><i class="bi bi-x-circle me-1"></i> N</label>
+            
+            <input type="radio" class="btn-check" name="status_${index}" id="btn-na-${index}" value="Não se Aplica" onchange="toggleFoto(${index}, false)" autocomplete="off">
+            <label class="btn btn-outline-warning fw-bold flex-fill rounded-pill py-2" for="btn-na-${index}"><i class="bi bi-dash-circle me-1"></i> NA</label>
+          </div>
+          
+          <div class="text-center text-muted mb-2" style="font-size: 0.75rem;">
+            C = Conforme | N = Não Conforme | NA = Não se Aplica
+          </div>
+
+          <div class="input-group mt-3">
+            <span class="input-group-text bg-transparent border-end-0 text-muted"><i class="bi bi-pencil-square"></i></span>
+            <input type="text" class="form-control obs-input border-start-0 ps-0 mt-0" id="obs_${index}" placeholder="Observação (opcional)">
+          </div>
+          
+          <input type="file" class="form-control foto-input mt-3" id="foto_${index}" accept="image/*" capture="environment">
+        </div>
+      `;
+    });
+  }
+
+  function preencherPlaca() {
+    const veiculoSelecionado = document.getElementById('veiculo').value;
+    const campoPlaca = document.getElementById('placa');
+    if (mapaVeiculoPlaca[veiculoSelecionado]) {
+      campoPlaca.value = mapaVeiculoPlaca[veiculoSelecionado];
+    } else {
+      campoPlaca.value = ''; 
+    }
+  }
+
+  function toggleFoto(index, isNaoConforme) {
+    const inputFoto = document.getElementById(`foto_${index}`);
+    if (isNaoConforme) {
+      inputFoto.style.display = 'block';
+    } else {
+      inputFoto.style.display = 'none';
+      inputFoto.value = ''; 
+    }
+  }
+
+  function abrirRevisao() {
+    const motorista = document.getElementById('motorista').value;
+    const veiculo = document.getElementById('veiculo').value;
+    const placa = document.getElementById('placa').value;
+    const km_puro = document.getElementById('km').value;
+    const dataRevisao = document.getElementById('dataRevisao').value;
+
+    if(!motorista || !veiculo || !placa || !km_puro || !dataRevisao) {
+      alert("Por favor, preencha todos os dados principais (incluindo KM e Data da Revisão)!");
+      return;
+    }
+
+    const dataRevFormatada = dataRevisao.split('-').reverse().join('/');
+
+    dadosFormularioAtual = {
+      dataHora: document.getElementById('dataHora').value,
+      motorista: motorista,
+      veiculo: veiculo,
+      placa: placa,
+      km: `${km_puro} (Revisão: ${dataRevFormatada})`, 
+      km_puro: km_puro,
+      dataRevFormatada: dataRevFormatada,
+      respostas: [] 
+    };
+
+    let htmlRevisao = `
+      <div class="p-3 bg-white rounded shadow-sm border mb-3">
+        <p><strong><i class="bi bi-person me-2"></i>Motorista:</strong> ${dadosFormularioAtual.motorista}</p>
+        <p><strong><i class="bi bi-car-front me-2"></i>Veículo:</strong> ${dadosFormularioAtual.veiculo} (${dadosFormularioAtual.placa})</p>
+        <p class="mb-0"><strong><i class="bi bi-speedometer2 me-2"></i>KM:</strong> ${dadosFormularioAtual.km_puro} | <strong>Rev:</strong> ${dadosFormularioAtual.dataRevFormatada}</p>
+      </div>
+      <h6 class="fw-bold mb-2 ps-1">Detalhes da Inspeção:</h6>
+      <ul class="list-group shadow-sm border-0">
+    `;
+
+    const itensDiv = document.querySelectorAll('.item-inspecao');
+    let todosRespondidos = true;
+
+    itensDiv.forEach((div, index) => {
+      const nomeItem = div.querySelector('p').innerText;
+      const statusCheck = div.querySelector(`input[name="status_${index}"]:checked`);
+      const obs = document.getElementById(`obs_${index}`).value.trim();
+      
+      if(statusCheck) {
+        let statusPlanilha = statusCheck.value;
+        if(obs !== "") statusPlanilha += ` (Obs: ${obs})`;
+
+        // AQUI ESTÁ A CORREÇÃO:
+        if (statusCheck.value === 'Não Conforme') {
+          // Se for N, envia os dados normalmente para aparecer na planilha
+          dadosFormularioAtual.respostas.push({ 
+            item: nomeItem, 
+            status: statusPlanilha, 
+            status_puro: statusCheck.value,
+            obs_pura: obs 
+          });
+        } else {
+          // Se for C ou NA, envia VAZIO ("") para manter as colunas organizadas no Google Sheets, 
+          // mas sem escrever nada dentro da célula.
+          dadosFormularioAtual.respostas.push({ 
+            item: nomeItem, 
+            status: "", 
+            status_puro: "",
+            obs_pura: "" 
+          });
+        }
+        
+        // A interface do PDF/Celular continua mostrando TUDO (C, N e NA)
+        let badgeClass = '';
+        if (statusCheck.value === 'Conforme') badgeClass = 'bg-success';
+        else if (statusCheck.value === 'Não Conforme') badgeClass = 'bg-danger';
+        else badgeClass = 'bg-warning text-dark';
+        
+        let htmlItem = `<li class="list-group-item d-flex justify-content-between align-items-start py-2 border-0 border-bottom">
+                          <div class="ms-2 me-auto">
+                            <div class="fw-bold text-dark" style="font-size: 0.9rem;">${nomeItem}</div>
+                            ${obs !== "" ? `<small class="text-muted fst-italic"><i class="bi bi-chat-left-text me-1"></i>${obs}</small>` : ''}
+                          </div>
+                          <span class="badge ${badgeClass} rounded-pill">${statusCheck.value}</span>
+                        </li>`;
+        
+        htmlRevisao += htmlItem;
+      } else {
+        todosRespondidos = false;
+      }
+    });
+
+    htmlRevisao += `</ul>`;
+
+    if(!todosRespondidos) {
+      alert("Atenção: Você não marcou C, N ou NA em todos os itens da lista.");
+      return;
+    }
+
+    document.getElementById('conteudoRevisao').innerHTML = htmlRevisao;
+    modalRevisao.show();
+  }
+
+  function confirmarEnvio() {
+    const btn = document.getElementById('btnConfirmar');
+    btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Salvando...';
+    btn.disabled = true;
+
+    fetch(APPS_SCRIPT_URL, {
+      method: 'POST',
+      body: JSON.stringify(dadosFormularioAtual),
+      redirect: "follow",
+      headers: {
+        'Content-Type': 'text/plain;charset=utf-8',
+      }
+    })
+    .then(response => {
+      modalRevisao.hide();
+      document.getElementById('modalRevisao').addEventListener('hidden.bs.modal', function onModalHidden() {
+        gerarTelaRelatorio();
+        document.getElementById('modalRevisao').removeEventListener('hidden.bs.modal', onModalHidden);
+      });
+    })
+    .catch(erro => {
+      console.error(erro);
+      modalRevisao.hide();
+      setTimeout(gerarTelaRelatorio, 600); 
+    });
+  }
+
+  function gerarTelaRelatorio() {
+    const areaImpressao = document.getElementById('areaImpressao');
+    const form = document.getElementById('checklistForm');
+    const header = document.getElementById('headerForm');
+    
+    let htmlImpressao = `
+      <div style="text-align: center; margin-bottom: 15px;">
+        <img src="logo.png" alt="Logo da Empresa" style="max-height: 80px; width: auto;" onerror="this.style.display='none'">
+      </div>
+      <h3 style="text-align: center; color: #0d6efd; margin-bottom: 20px;">RELATÓRIO DE INSPEÇÃO DIÁRIA</h3>
+      <div style="font-size: 16px;">
+        ${document.getElementById('conteudoRevisao').innerHTML}
+      </div>
+      <hr>
+      <h6 style="margin-top: 20px; font-weight: bold;">Registros Fotográficos (Não Conforme):</h6>
+      <div id="fotosImpressao" style="margin-top: 15px;"></div>
+      
+      <div class="d-grid gap-3 mt-5 d-print-none border-top pt-4">
+        <button class="btn btn-success btn-lg rounded-pill shadow-sm" onclick="abrirWhatsApp()"><i class="bi bi-whatsapp me-2"></i>Enviar Relatório</button>
+        <button class="btn btn-outline-secondary btn-lg rounded-pill" onclick="voltarParaNovoPreenchimento()"><i class="bi bi-arrow-clockwise me-2"></i>Fazer Nova Inspeção</button>
+      </div>
+    `;
+    
+    areaImpressao.innerHTML = htmlImpressao;
+    const containerFotos = document.getElementById('fotosImpressao');
+    const inputsFoto = document.querySelectorAll('.foto-input');
+    let qtdeFotos = 0;
+
+    inputsFoto.forEach((input, index) => {
+      if (input.files && input.files[0]) {
+        qtdeFotos++;
+        const nomeItem = document.querySelectorAll('.item-inspecao')[index].querySelector('p').innerText;
+        const obsItem = document.getElementById(`obs_${index}`).value.trim();
+        
+        let divFoto = document.createElement('div');
+        divFoto.style.marginBottom = '20px';
+        
+        let infoFoto = `<p style="font-weight: bold; margin-bottom: 2px; color: #dc3545;">Item: ${nomeItem}</p>`;
+        if(obsItem !== "") {
+          infoFoto += `<p style="font-size: 14px; margin-bottom: 5px; color: #555;">Obs: ${obsItem}</p>`;
+        }
+        divFoto.innerHTML = infoFoto;
+        
+        let imgDOM = document.createElement('img');
+        imgDOM.src = URL.createObjectURL(input.files[0]);
+        imgDOM.style.maxWidth = '100%';
+        imgDOM.style.maxHeight = '350px';
+        imgDOM.style.borderRadius = '8px';
+        imgDOM.style.border = '1px solid #ccc';
+        
+        divFoto.appendChild(imgDOM);
+        containerFotos.appendChild(divFoto);
+      }
+    });
+
+    if(qtdeFotos === 0) {
+      containerFotos.innerHTML = "<p class='text-muted fst-italic'>Nenhuma foto anexada neste relatório.</p>";
+    }
+
+    form.style.display = 'none';
+    header.style.display = 'none';
+    areaImpressao.style.display = 'block';
+
+    setTimeout(() => {
+      window.print(); 
+    }, 1000); 
+  }
+
+  function abrirWhatsApp() {
+    const mensagem = `Olá! Segue o checklist diário preenchido.\n*Veículo:* ${dadosFormularioAtual.veiculo}\n*Placa:* ${dadosFormularioAtual.placa}\n*Motorista:* ${dadosFormularioAtual.motorista}\n*Última Rev:* ${dadosFormularioAtual.dataRevFormatada}`;
+    const zapUrl = `https://api.whatsapp.com/send?text=${encodeURIComponent(mensagem)}`;
+    window.open(zapUrl, '_blank');
+  }
+
+  function voltarParaNovoPreenchimento() {
+    document.getElementById('areaImpressao').style.display = 'none';
+    document.getElementById('areaImpressao').innerHTML = '';
+    
+    document.getElementById('checklistForm').style.display = 'block';
+    document.getElementById('headerForm').style.display = 'flex'; 
+    
+    document.getElementById('checklistForm').reset();
+    document.getElementById('dataHora').value = new Date().toLocaleString('pt-BR');
+    
+    const btn = document.getElementById('btnConfirmar');
+    btn.innerHTML = '<i class="bi bi-cloud-arrow-up me-2"></i>Confirmar';
+    btn.disabled = false;
+  }
+</script>
+
+<script>
+  if ('serviceWorker' in navigator) {
+    window.addEventListener('load', () => {
+      navigator.serviceWorker.register('./sw.js')
+        .then(registration => {
+          console.log('ServiceWorker registrado com sucesso!', registration.scope);
+        })
+        .catch(error => {
+          console.log('Falha ao registrar o ServiceWorker:', error);
+        });
+    });
+  }
+</script>
+
+</body>
+</html>
