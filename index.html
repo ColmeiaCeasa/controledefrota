@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>Frota Colmeia</title>
+  <title>Controle de Frota Digital</title>
   
   <link rel="manifest" href="manifest.json">
   <meta name="theme-color" content="#212529">
@@ -12,7 +12,7 @@
   
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-  <meta name="apple-mobile-web-app-title" content="Colmeia">
+  <meta name="apple-mobile-web-app-title" content="Frota Digital">
   <link rel="apple-touch-icon" href="logo.png">
 
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
@@ -25,9 +25,10 @@
       padding-bottom: 50px;
     }
 
-    /* Cabeçalho com a Logo da Empresa */
+    /* Cabeçalho com a Logo da Empresa e Texto */
     .header-colmeia {
       background-color: #212529;
+      color: #ffc107;
       padding: 35px 20px 25px;
       text-align: center;
       border-bottom: 5px solid #ffc107;
@@ -36,12 +37,22 @@
       box-shadow: 0 4px 15px rgba(0,0,0,0.1);
     }
     
-    /* Ajuste da Logo para ficar no tamanho ideal no topo */
+    /* Ajuste da Logo */
     .header-colmeia img { 
-      max-height: 100px; /* Se a logo ficar pequena, aumente esse número */
+      max-height: 75px; /* Tamanho ajustado para caber a logo e o texto harmoniosamente */
       width: auto;
       max-width: 100%;
       object-fit: contain;
+      margin-bottom: 15px; /* Espaço entre a logo e o texto */
+    }
+
+    /* Estilo do Título no Topo */
+    .header-colmeia h3 { 
+      font-weight: 800; 
+      letter-spacing: -0.5px; 
+      margin: 0; 
+      font-size: 1.3rem;
+      text-transform: uppercase;
     }
 
     .main-container { max-width: 500px; margin: 0 auto; padding: 0 15px; }
@@ -106,6 +117,7 @@
 
 <header class="header-colmeia">
   <img src="logo.png" alt="Logo da Empresa" onerror="this.style.display='none'">
+  <h3>Controle de Frota Digital</h3>
 </header>
 
 <div class="main-container">
@@ -185,7 +197,7 @@
 
 <script>
   // 👇👇👇 COLE A URL DO APPS SCRIPT DA PLANILHA CENTRAL AQUI 👇👇👇
-  const APPS_SCRIPT_URL = 'COLOQUE_AQUI_A_NOVA_URL_DO_GOOGLE_APPS_SCRIPT_DESTA_PLANILHA';
+  const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbypKy8fusR0fSfVHXH_ApoMgKvFGcNScOBTjnUS1ULAi0kr5xTQWslSi7tQ1qE1K2l3Cw/exec';
 
   let modalLoginObj;
 
