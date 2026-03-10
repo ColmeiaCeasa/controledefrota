@@ -1,0 +1,493 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Dashboard de Frota</title>
+  
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
+  
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+
+  <style>
+    body { 
+      background-color: #f4f7f6; 
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; 
+    }
+    
+    .navbar-custom { 
+      background-color: #198754; 
+      color: white; 
+      padding: 15px 20px; 
+      box-shadow: 0 4px 10px rgba(0,0,0,0.1); 
+    }
+    
+    .navbar-custom h4 { 
+      margin: 0; 
+      font-weight: 700; 
+      font-size: 1.2rem;
+    }
+    
+    @media (min-width: 768px) {
+      .navbar-custom h4 { font-size: 1.5rem; }
+    }
+
+    .dashboard-container {
+      max-width: 1400px;
+      margin: 0 auto;
+      padding: 0 15px;
+    }
+
+    .filter-card {
+      background: #ffffff;
+      border-radius: 12px;
+      padding: 15px 20px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+      margin-bottom: 25px;
+      border: 1px solid #e9ecef;
+    }
+
+    .summary-card {
+      background: #fff; 
+      border-radius: 12px; 
+      padding: 20px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.05); 
+      border-left: 5px solid #198754;
+      height: 100%;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+    }
+    
+    .summary-card h6 { 
+      color: #6c757d; 
+      font-weight: 600; 
+      font-size: 0.85rem; 
+      text-transform: uppercase; 
+      margin-bottom: 5px;
+    }
+    
+    .summary-card h3 { 
+      color: #212529; 
+      font-weight: 700; 
+      margin: 0; 
+      font-size: 1.5rem;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    @media (min-width: 768px) {
+      .summary-card h3 { font-size: 1.8rem; }
+    }
+
+    .chart-container {
+      background: #fff; 
+      border-radius: 12px; 
+      padding: 20px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.05); 
+      height: 100%; 
+      display: flex; 
+      flex-direction: column;
+    }
+    
+    .chart-title { 
+      font-weight: 700; 
+      color: #495057; 
+      margin-bottom: 15px; 
+      border-bottom: 2px solid #f0f2f5; 
+      padding-bottom: 10px; 
+      font-size: 1.1rem; 
+    }
+
+    .chart-wrapper {
+      position: relative;
+      flex-grow: 1;
+      min-height: 250px; 
+      width: 100%;
+    }
+    
+    /* Regras para melhorar a impressão no PDF gerado */
+    .pdf-export-mode {
+      width: 1200px !important;
+      max-width: none !important;
+      padding: 20px !important;
+      background: white !important;
+    }
+  </style>
+</head>
+<body>
+
+<div class="navbar-custom d-flex justify-content-between align-items-center mb-4">
+  <div class="d-flex align-items-center">
+    <i class="bi bi-bar-chart-fill fs-3 me-2"></i>
+    <h4>Dashboard Frota</h4>
+  </div>
+  <button class="btn btn-light btn-sm fw-bold text-success shadow-sm" onclick="exportarPDF()" id="btnExportar">
+    <i class="bi bi-file-earmark-pdf-fill"></i> <span class="d-none d-sm-inline ms-1">Exportar PDF</span>
+  </button>
+</div>
+
+<div class="dashboard-container" id="areaParaPDF">
+  
+  <div id="loadingInfo" class="text-center my-5 text-success">
+    <div class="spinner-border" role="status"></div>
+    <p class="mt-2 fw-bold">Carregando dados da planilha...</p>
+  </div>
+
+  <div id="conteudoDashboard" style="display: none;">
+    
+    <div class="filter-card" data-html2canvas-ignore="true">
+      <h6 class="text-success fw-bold mb-3"><i class="bi bi-funnel-fill me-2"></i>Filtros de Busca</h6>
+      <div class="row g-2 align-items-end">
+        <div class="col-md-3 col-6">
+          <label class="form-label text-muted mb-1 small">Data Início</label>
+          <input type="date" id="dataInicio" class="form-control form-control-sm" onchange="aplicarFiltros()">
+        </div>
+        <div class="col-md-3 col-6">
+          <label class="form-label text-muted mb-1 small">Data Fim</label>
+          <input type="date" id="dataFim" class="form-control form-control-sm" onchange="aplicarFiltros()">
+        </div>
+        <div class="col-md-3 col-6">
+          <label class="form-label text-muted mb-1 small">Motorista</label>
+          <select id="filtroMotorista" class="form-select form-select-sm" onchange="aplicarFiltros()">
+            <option value="todos">Todos os Motoristas</option>
+            </select>
+        </div>
+        <div class="col-md-3 col-6">
+          <label class="form-label text-muted mb-1 small">Veículo</label>
+          <select id="filtroVeiculo" class="form-select form-select-sm" onchange="aplicarFiltros()">
+            <option value="todos">Todos os Veículos</option>
+            </select>
+        </div>
+      </div>
+      <div class="mt-3 text-end d-md-block d-grid">
+        <button class="btn btn-sm btn-outline-secondary px-4" onclick="limparFiltros()"><i class="bi bi-eraser me-1"></i> Limpar Filtros</button>
+      </div>
+    </div>
+
+    <h3 class="mb-4 text-success d-none" id="tituloPDF">Relatório de Desempenho da Frota</h3>
+
+    <div class="row g-3 mb-4">
+      <div class="col-12 col-sm-6 col-lg-3">
+        <div class="summary-card">
+          <h6>Total Gasto (R$)</h6>
+          <h3 id="cardTotalGasto" class="text-success">R$ 0,00</h3>
+        </div>
+      </div>
+      <div class="col-12 col-sm-6 col-lg-3">
+        <div class="summary-card" style="border-left-color: #0dcaf0;">
+          <h6>Litros Abastecidos</h6>
+          <h3 id="cardTotalLitros">0 L</h3>
+        </div>
+      </div>
+      <div class="col-12 col-sm-6 col-lg-3">
+        <div class="summary-card" style="border-left-color: #ffc107;">
+          <h6>KM Percorrido</h6>
+          <h3 id="cardTotalKm">0 km</h3>
+        </div>
+      </div>
+      <div class="col-12 col-sm-6 col-lg-3">
+        <div class="summary-card" style="border-left-color: #dc3545;">
+          <h6>Média Geral</h6>
+          <h3 id="cardMediaGeral">0.0 km/L</h3>
+        </div>
+      </div>
+    </div>
+
+    <div class="row g-4 mb-4">
+      <div class="col-lg-8">
+        <div class="chart-container">
+          <h5 class="chart-title"><i class="bi bi-truck me-2"></i>Gasto por Veículo (R$)</h5>
+          <div class="chart-wrapper">
+            <canvas id="chartVeiculos"></canvas>
+          </div>
+        </div>
+      </div>
+      
+      <div class="col-lg-4">
+        <div class="chart-container">
+          <h5 class="chart-title"><i class="bi bi-fuel-pump me-2"></i>Gasto por Posto</h5>
+          <div class="chart-wrapper">
+            <canvas id="chartPostos"></canvas>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="row g-4 mb-2">
+      <div class="col-lg-12">
+        <div class="chart-container">
+          <h5 class="chart-title"><i class="bi bi-people me-2"></i>Ranking por Motorista</h5>
+          <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+              <thead class="table-light">
+                <tr>
+                  <th>Motorista</th>
+                  <th>Nº Abastecimentos</th>
+                  <th>Total Litros</th>
+                  <th>Gasto Total (R$)</th>
+                </tr>
+              </thead>
+              <tbody id="tabelaMotoristas">
+                </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<script>
+  // 👇👇👇 COLE SUA NOVA URL AQUI 👇👇👇
+  const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwTwq0TShQSLk2q0JD7qqchEjETXRV5yjAgw5nC9clMdQrsYHrghUvWIbS9-nh6aCQz/exec';
+
+  let dadosCompletos = [];
+  let graficoVeiculos, graficoPostos;
+
+  document.addEventListener("DOMContentLoaded", function() {
+    carregarDados();
+  });
+
+  function carregarDados() {
+    fetch(APPS_SCRIPT_URL + "?tipo=registros")
+      .then(response => response.json())
+      .then(dados => {
+        dadosCompletos = dados;
+        popularOpcoesFiltro(dados);
+        aplicarFiltros();
+        
+        document.getElementById('loadingInfo').style.display = 'none';
+        document.getElementById('conteudoDashboard').style.display = 'block';
+      })
+      .catch(erro => {
+        document.getElementById('loadingInfo').innerHTML = `<p class="text-danger">Erro ao carregar dados. Verifique a URL do script.</p>`;
+        console.error("Erro:", erro);
+      });
+  }
+
+  function popularOpcoesFiltro(dados) {
+    const selectMotorista = document.getElementById('filtroMotorista');
+    const selectVeiculo = document.getElementById('filtroVeiculo');
+    
+    const motoristas = new Set();
+    const veiculos = new Set();
+    
+    dados.forEach(linha => {
+      if (linha[1]) motoristas.add(linha[1]); 
+      if (linha[2]) veiculos.add(linha[2]);   
+    });
+
+    Array.from(motoristas).sort().forEach(mot => {
+      selectMotorista.innerHTML += `<option value="${mot}">${mot}</option>`;
+    });
+
+    Array.from(veiculos).sort().forEach(vei => {
+      selectVeiculo.innerHTML += `<option value="${vei}">${vei}</option>`;
+    });
+  }
+
+  function aplicarFiltros() {
+    const dataInicioInput = document.getElementById('dataInicio').value;
+    const dataFimInput = document.getElementById('dataFim').value;
+    const motoristaFiltro = document.getElementById('filtroMotorista').value;
+    const veiculoFiltro = document.getElementById('filtroVeiculo').value;
+    
+    let dadosFiltrados = dadosCompletos.filter(linha => {
+      let passou = true;
+
+      if (motoristaFiltro !== "todos" && linha[1] !== motoristaFiltro) passou = false;
+      if (veiculoFiltro !== "todos" && linha[2] !== veiculoFiltro) passou = false;
+
+      if (linha[0] && (dataInicioInput || dataFimInput)) {
+        const [dia, mes, ano] = linha[0].split('/');
+        const dataLinha = new Date(ano, mes - 1, dia);
+
+        if (dataInicioInput) {
+          const [anoI, mesI, diaI] = dataInicioInput.split('-');
+          const dInicio = new Date(anoI, mesI - 1, diaI);
+          if (dataLinha < dInicio) passou = false;
+        }
+
+        if (dataFimInput) {
+          const [anoF, mesF, diaF] = dataFimInput.split('-');
+          const dFim = new Date(anoF, mesF - 1, diaF);
+          if (dataLinha > dFim) passou = false;
+        }
+      }
+
+      return passou;
+    });
+
+    atualizarCards(dadosFiltrados);
+    atualizarGraficoVeiculos(dadosFiltrados);
+    atualizarGraficoPostos(dadosFiltrados);
+    atualizarTabelaMotoristas(dadosFiltrados);
+  }
+
+  function limparFiltros() {
+    document.getElementById('dataInicio').value = '';
+    document.getElementById('dataFim').value = '';
+    document.getElementById('filtroMotorista').value = 'todos';
+    document.getElementById('filtroVeiculo').value = 'todos';
+    aplicarFiltros();
+  }
+
+  function atualizarCards(dados) {
+    let totalGasto = 0, totalLitros = 0, totalKm = 0;
+
+    dados.forEach(linha => {
+      totalLitros += parseFloat(linha[5]) || 0; 
+      totalGasto += parseFloat(linha[6]) || 0;  
+      totalKm += parseFloat(linha[9]) || 0;     
+    });
+
+    const mediaGeral = totalLitros > 0 ? (totalKm / totalLitros).toFixed(2) : 0;
+
+    document.getElementById('cardTotalGasto').innerText = `R$ ${totalGasto.toLocaleString('pt-BR', {minimumFractionDigits: 2, maximumFractionDigits: 2})}`;
+    document.getElementById('cardTotalLitros').innerText = `${totalLitros.toLocaleString('pt-BR')} L`;
+    document.getElementById('cardTotalKm').innerText = `${totalKm.toLocaleString('pt-BR')} km`;
+    document.getElementById('cardMediaGeral').innerText = `${mediaGeral} km/L`;
+  }
+
+  function agruparPorIndice(dados, indiceChave, indiceValor) {
+    const mapa = {};
+    dados.forEach(linha => {
+      const chave = linha[indiceChave];
+      const valor = parseFloat(linha[indiceValor]) || 0;
+      if (chave) {
+        mapa[chave] = (mapa[chave] || 0) + valor;
+      }
+    });
+    return mapa;
+  }
+
+  function atualizarGraficoVeiculos(dados) {
+    const dadosAgrupados = agruparPorIndice(dados, 2, 6); 
+    const labels = Object.keys(dadosAgrupados).sort((a, b) => dadosAgrupados[b] - dadosAgrupados[a]);
+    const valores = labels.map(label => dadosAgrupados[label]);
+
+    if (graficoVeiculos) graficoVeiculos.destroy();
+
+    const ctx = document.getElementById('chartVeiculos').getContext('2d');
+    graficoVeiculos = new Chart(ctx, {
+      type: 'bar',
+      data: {
+        labels: labels,
+        datasets: [{
+          label: 'Gasto Total (R$)',
+          data: valores,
+          backgroundColor: '#198754',
+          borderRadius: 6
+        }]
+      },
+      options: { 
+        responsive: true, 
+        maintainAspectRatio: false,
+        plugins: { legend: { display: false } } 
+      }
+    });
+  }
+
+  function atualizarGraficoPostos(dados) {
+    const dadosAgrupados = agruparPorIndice(dados, 4, 6); 
+    const labels = Object.keys(dadosAgrupados);
+    const valores = Object.values(dadosAgrupados);
+
+    if (graficoPostos) graficoPostos.destroy();
+
+    const ctx = document.getElementById('chartPostos').getContext('2d');
+    graficoPostos = new Chart(ctx, {
+      type: 'doughnut',
+      data: {
+        labels: labels,
+        datasets: [{
+          data: valores,
+          backgroundColor: ['#198754', '#0dcaf0', '#ffc107', '#dc3545', '#6610f2', '#fd7e14'],
+          borderWidth: 1
+        }]
+      },
+      options: { 
+        responsive: true, 
+        maintainAspectRatio: false 
+      }
+    });
+  }
+
+  function atualizarTabelaMotoristas(dados) {
+    const mapaMotoristas = {};
+    
+    dados.forEach(linha => {
+      const motorista = linha[1]; 
+      const litros = parseFloat(linha[5]) || 0; 
+      const valor = parseFloat(linha[6]) || 0;  
+      
+      if (motorista) {
+        if (!mapaMotoristas[motorista]) {
+          mapaMotoristas[motorista] = { qtd: 0, litros: 0, valor: 0 };
+        }
+        mapaMotoristas[motorista].qtd += 1;
+        mapaMotoristas[motorista].litros += litros;
+        mapaMotoristas[motorista].valor += valor;
+      }
+    });
+
+    const tbody = document.getElementById('tabelaMotoristas');
+    tbody.innerHTML = '';
+
+    const chavesOrdenadas = Object.keys(mapaMotoristas).sort((a, b) => mapaMotoristas[b].valor - mapaMotoristas[a].valor);
+
+    chavesOrdenadas.forEach(moto => {
+      const obj = mapaMotoristas[moto];
+      tbody.innerHTML += `
+        <tr>
+          <td class="fw-bold text-nowrap">${moto}</td>
+          <td>${obj.qtd}</td>
+          <td class="text-nowrap">${obj.litros.toFixed(2)} L</td>
+          <td class="text-danger fw-bold text-nowrap">R$ ${obj.valor.toLocaleString('pt-BR', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</td>
+        </tr>
+      `;
+    });
+  }
+
+  // ---- FUNÇÃO PARA EXPORTAR PDF ----
+  function exportarPDF() {
+    const btnExportar = document.getElementById('btnExportar');
+    const areaParaPDF = document.getElementById('areaParaPDF');
+    const tituloPDF = document.getElementById('tituloPDF');
+    
+    // Altera o estado do botão
+    btnExportar.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span> Gerando...';
+    btnExportar.disabled = true;
+
+    // Ajusta o CSS da área para garantir que o PDF saia em tela cheia de PC (ignorando telas de celular)
+    areaParaPDF.classList.add('pdf-export-mode');
+    tituloPDF.classList.remove('d-none'); // Exibe um título bonito só pro PDF
+
+    // Configuração da biblioteca
+    const opt = {
+      margin:       10,
+      filename:     'Relatorio_Frota_Abastecimento.pdf',
+      image:        { type: 'jpeg', quality: 0.98 },
+      html2canvas:  { scale: 2, useCORS: true },
+      jsPDF:        { unit: 'mm', format: 'a4', orientation: 'landscape' } // Formato deitado para caber tudo melhor
+    };
+
+    // Gera o PDF
+    html2pdf().set(opt).from(areaParaPDF).save().then(() => {
+      // Devolve o visual normal pro site
+      areaParaPDF.classList.remove('pdf-export-mode');
+      tituloPDF.classList.add('d-none');
+      btnExportar.innerHTML = '<i class="bi bi-file-earmark-pdf-fill"></i> <span class="d-none d-sm-inline ms-1">Exportar PDF</span>';
+      btnExportar.disabled = false;
+    });
+  }
+</script>
+
+</body>
+</html>
