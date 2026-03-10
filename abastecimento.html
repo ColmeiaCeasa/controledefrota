@@ -30,7 +30,7 @@
       justify-content: center;
       margin-bottom: 20px;
     }
-    .app-header i { font-size: 1.5rem; color: #198754; margin-right: 10px; }
+    .app-header i.icon-principal { font-size: 1.5rem; color: #198754; margin-right: 10px; }
     .app-header h5 { margin: 0; font-weight: 700; color: #198754; letter-spacing: -0.5px; }
 
     .app-card {
@@ -74,7 +74,11 @@
 <body>
 
 <header class="app-header">
-  <i class="bi bi-fuel-pump-fill"></i>
+  <a href="index.html" class="text-success" style="position: absolute; left: 20px; font-size: 1.5rem;">
+    <i class="bi bi-arrow-left"></i>
+  </a>
+
+  <i class="bi bi-fuel-pump-fill icon-principal"></i>
   <h5>ABASTECIMENTO</h5>
 </header>
 
@@ -186,7 +190,6 @@
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 
 <script>
-  // 👇👇👇 COLE SUA URL AQUI 👇👇👇
   const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwTwq0TShQSLk2q0JD7qqchEjETXRV5yjAgw5nC9clMdQrsYHrghUvWIbS9-nh6aCQz/exec';
 
   let dadosFormularioAtual = {}; 
@@ -195,7 +198,6 @@
   let mapaVeiculoPlaca = {}; 
 
   document.addEventListener("DOMContentLoaded", function() {
-    // Seta a data de hoje por padrão
     document.getElementById('dataAbastecimento').valueAsDate = new Date();
     
     modalRevisao = new bootstrap.Modal(document.getElementById('modalRevisao'));
@@ -204,7 +206,6 @@
     carregarDadosBase();
   });
 
-  // Função que busca os dados da sua aba "Cadastro"
   function carregarDadosBase() {
     fetch(APPS_SCRIPT_URL)
       .then(response => response.json())
