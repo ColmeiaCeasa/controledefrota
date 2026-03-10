@@ -100,6 +100,10 @@
 <body>
 
 <header class="app-header d-print-none" id="headerForm">
+  <a href="index.html" class="text-primary" style="position: absolute; left: 20px; font-size: 1.5rem;">
+    <i class="bi bi-arrow-left"></i>
+  </a>
+
   <img src="logo.png" alt="Logo" onerror="this.style.display='none'">
   <h5>CHECK-LIST VEÍCULOS</h5>
 </header>
@@ -328,9 +332,7 @@
         let statusPlanilha = statusCheck.value;
         if(obs !== "") statusPlanilha += ` (Obs: ${obs})`;
 
-        // AQUI ESTÁ A CORREÇÃO:
         if (statusCheck.value === 'Não Conforme') {
-          // Se for N, envia os dados normalmente para aparecer na planilha
           dadosFormularioAtual.respostas.push({ 
             item: nomeItem, 
             status: statusPlanilha, 
@@ -338,8 +340,6 @@
             obs_pura: obs 
           });
         } else {
-          // Se for C ou NA, envia VAZIO ("") para manter as colunas organizadas no Google Sheets, 
-          // mas sem escrever nada dentro da célula.
           dadosFormularioAtual.respostas.push({ 
             item: nomeItem, 
             status: "", 
@@ -348,7 +348,6 @@
           });
         }
         
-        // A interface do PDF/Celular continua mostrando TUDO (C, N e NA)
         let badgeClass = '';
         if (statusCheck.value === 'Conforme') badgeClass = 'bg-success';
         else if (statusCheck.value === 'Não Conforme') badgeClass = 'bg-danger';
